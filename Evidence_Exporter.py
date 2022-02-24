@@ -27,8 +27,8 @@ import time
 import zipfile
 import datetime
 
-__contact__ = "https://github.com/jankais3r/XRY-Evidence-Extractor"
-__version__ = "0.1"
+__contact__ = "https://github.com/jankais3r"
+__version__ = "0.2"
 __description__ = "Creates a ZIP archive with logical evidence that can be parsed by other forensic tools"
 
 
@@ -37,24 +37,22 @@ def monkeyWritecheck(self, zinfo): # ʕ ᵔᴥᵔ ʔ monkey-patching a zipfile f
 		if zinfo.filename in self.NameToInfo:
 			#import warnings
 			#warnings.warn('Duplicate name: %r' % zinfo.filename, stacklevel=3)
-			raise ValueError("dupes? k no thx")
+			raise ValueError('dupes? k no thx')
 		if self.mode not in ('w', 'x', 'a'):
 			raise ValueError("write() requires mode 'w', 'x', or 'a'")
 		if not self.fp:
-			raise ValueError(
-				"Attempt to write ZIP archive that was already closed")
+			raise ValueError('Attempt to write ZIP archive that was already closed')
 		zipfile._check_compression(zinfo.compress_type)
 		if not self._allowZip64:
 			requires_zip64 = None
 			if len(self.filelist) >= ZIP_FILECOUNT_LIMIT:
-				requires_zip64 = "Files count"
+				requires_zip64 = 'Files count'
 			elif zinfo.file_size > ZIP64_LIMIT:
-				requires_zip64 = "Filesize"
+				requires_zip64 = 'Filesize'
 			elif zinfo.header_offset > ZIP64_LIMIT:
-				requires_zip64 = "Zipfile size"
+				requires_zip64 = 'Zipfile size'
 			if requires_zip64:
-				raise LargeZipFile(requires_zip64 +
-								   " would require ZIP64 extensions")
+				raise LargeZipFile(requires_zip64 + ' would require ZIP64 extensions')
 zipfile.ZipFile._writecheck = monkeyWritecheck
 
 
@@ -133,7 +131,10 @@ logText = '"Status","Reason","Path","Filename","XRY Date Modified","ZIP Date Mod
 def main(image, node):
 	volumeRoot = image.get_children(xry.nodeids.roots.volume_root)
 	parseRecursive(image, node, volumeRoot)
-	with open(os.path.join(outputDir,  'Extracted_' + time.strftime('%Y-%m-%d %H_%M_%S', time.gmtime(startTime)) + '_log.csv'), 'w') as lf:
+	runTime = int(round(time.time() - startTime))
+	print('Created  Extracted_' + time.strftime('%Y-%m-%d %H_%M_%S', time.gmtime(startTime)) + '.zip in ' + outputDir)
+	print('Computing statistics and generating a log file. Please stand by.')
+	with open(os.path.join(outputDir,  'Extracted_' + time.strftime('%Y-%m-%d %H_%M_%S', time.gmtime(startTime)) + '_log.csv'), 'w', encoding = 'utf8', errors = 'ignore') as lf:
 		lf.write(logText)
 	logDict = csv.DictReader(io.StringIO(logText))
 	encountered = 0
@@ -142,7 +143,5 @@ def main(image, node):
 		encountered += 1
 		if r['Status'] == 'OK':
 			exported += 1
-	runTime = int(round(time.time() - startTime))
-	print('Created  Extracted_' + time.strftime('%Y-%m-%d %H_%M_%S', time.gmtime(startTime)) + '.zip in ' + outputDir)
 	print(f'Processed {encountered:,d} case files. Exported {exported:,d} files in {runTime:,d} seconds.')
-	print('See log for details.')
+	print('Done. See log for details.')
