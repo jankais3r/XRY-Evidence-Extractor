@@ -23,13 +23,12 @@ import xry
 import io
 import os
 import csv
-import sys
 import time
 import zipfile
 import datetime
 
 __contact__ = "https://github.com/jankais3r/XRY-Evidence-Extractor"
-__version__ = "0.3"
+__version__ = "0.4"
 __description__ = "Creates a ZIP archive with logical evidence that can be parsed by other forensic tools"
 
 # ʕᵔᴥᵔʔ Monkey-patching a zipfile function that usually just warns about duplicate files to skip them entirely.
@@ -74,7 +73,7 @@ class MemoryStatusEx(Structure):
 
 def writeToFile():
 	global logText, fileBuffer
-	with zipfile.ZipFile(os.path.join(outputDir, 'Extracted_' + time.strftime('%Y-%m-%d %H_%M_%S', time.gmtime(startTime)) + '.zip'), mode = 'a') as zf:
+	with zipfile.ZipFile(os.path.join(outputDir, 'Extracted_' + time.strftime('%Y-%m-%d %H_%M_%S', time.gmtime(startTime)) + '_v' + __version__ + '.zip'), mode = 'a') as zf:
 		for f in fileBuffer:
 			itemName = f[0]
 			itemPath = f[1]
@@ -165,11 +164,12 @@ startTime = time.time()
 logText = '"Status","Reason","Path","Filename","XRY Date Modified","ZIP Date Modified","Size"\n'
 
 def main(image, node):
-	volumeRoot = image.get_children(xry.nodeids.roots.volume_root)
-	parseRecursive(image, node, volumeRoot)
-	writeToFile()
+	volumeRoots = image.get_children(xry.nodeids.roots.volume_root)
+	for volumeRoot in volumeRoots:
+		parseRecursive(image, node, volumeRoot)
+		writeToFile()
 	runTime = int(round(time.time() - startTime))
-	with open(os.path.join(outputDir,  'Extracted_' + time.strftime('%Y-%m-%d %H_%M_%S', time.gmtime(startTime)) + '_log.csv'), 'w', encoding = 'utf8', errors = 'ignore') as lf:
+	with open(os.path.join(outputDir,  'Extracted_' + time.strftime('%Y-%m-%d %H_%M_%S', time.gmtime(startTime)) + '_v' + __version__ + '_log.csv'), 'w', encoding = 'utf8', errors = 'ignore') as lf:
 		lf.write(logText)
 	logDict = csv.DictReader(io.StringIO(logText))
 	encountered = 0
